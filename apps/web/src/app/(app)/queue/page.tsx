@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { EmptyState } from "@/components/ui/empty-state";
 import { isDay, shiftDay, yesterday } from "@/lib/dates";
 import { BrandFilter, DayNavigation, dayHeading } from "@/features/review/queue-controls";
@@ -11,7 +10,6 @@ import { requireViewer } from "@/server/session";
 
 export default async function QueuePage({ searchParams }: PageProps<"/queue">) {
   const viewer = await requireViewer();
-  if (viewer.leads.length === 0) notFound();
 
   const params = await searchParams;
   const day = isDay(params.day) ? params.day : yesterday();

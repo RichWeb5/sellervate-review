@@ -1,16 +1,15 @@
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/ui/empty-state";
 import { requireViewer } from "@/server/session";
 
 export default async function HomePage() {
   const viewer = await requireViewer();
   if (viewer.leads.length > 0) redirect("/queue");
-
-  const firstName = viewer.fullName.split(" ")[0];
+  if (viewer.writesFor.length > 0) redirect("/me");
 
   return (
-    <div className="flex max-w-2xl flex-col gap-2">
-      <h1 className="text-2xl">Hi {firstName}</h1>
-      <p className="text-muted">You can read what your lead thought of the replies you sent.</p>
-    </div>
+    <EmptyState title="You are not on any brand yet">
+      Once someone adds you to a brand, its replies or your feedback will show up here.
+    </EmptyState>
   );
 }
