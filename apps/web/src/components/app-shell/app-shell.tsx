@@ -35,6 +35,9 @@ export function AppShell({ viewer, children }: { viewer: Viewer; children: React
           {viewer.writesFor.length > 0 && (
             <section className="flex flex-col gap-0.5">
               <h2 className="px-2 pb-1 text-xs font-medium text-muted">You write for</h2>
+              <NavLink href="/me" match={{ path: "/me", brand: null }}>
+                Your feedback
+              </NavLink>
               {viewer.writesFor.map((brand) => (
                 <p key={brand.id} className="px-2 py-1.5">
                   <BrandMark brand={brand} />
