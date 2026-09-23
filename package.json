@@ -14,6 +14,7 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
+    "check:isolation": "node scripts/check-isolation.mjs",
     "db:test": "supabase test db",
     "db:types": "supabase gen types typescript --local > apps/web/src/lib/supabase/database.types.ts"
   },
