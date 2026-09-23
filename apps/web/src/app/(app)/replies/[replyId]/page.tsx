@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeftIcon } from "@/components/ui/icons";
 import { isDay, yesterday } from "@/lib/dates";
 import { BrandGuide } from "@/features/review/brand-guide";
 import { ReplyDocument } from "@/features/review/reply-document";
@@ -27,8 +28,9 @@ export default async function ReviewReplyPage({
 
   return (
     <div className="flex max-w-6xl flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <Link href={queueHref(context)} className="text-sm text-muted hover:text-base-content">
+      <header className="flex flex-col items-start gap-3">
+        <Link href={queueHref(context)} className="btn -ml-3 gap-2 btn-ghost font-normal btn-sm">
+          <ArrowLeftIcon />
           Back to the queue
         </Link>
         <h1 className="text-2xl">{reply.subject}</h1>
