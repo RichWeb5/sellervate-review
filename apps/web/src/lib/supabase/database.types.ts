@@ -246,6 +246,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "replies_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "replies_conversation_id_brand_id_fkey"
             columns: ["conversation_id", "brand_id"]
             isOneToOne: false
@@ -367,7 +374,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      save_review: {
+        Args: {
+          flagged_criteria: string[]
+          new_note: string
+          new_score: number
+          target_reply: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       flag_severity: "critical" | "major" | "minor"
