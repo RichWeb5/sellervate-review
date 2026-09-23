@@ -1,33 +1,55 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/ui/brand-mark";
-import { formatDay, shiftDay, yesterday } from "@/lib/dates";
+import { CalendarIcon, ChevronDownIcon } from "@/components/ui/icons";
+import { formatDay, formatShortDay, yesterday } from "@/lib/dates";
+import type { QueueDay } from "@/server/queries/review-queue";
 import type { BrandSummary } from "@/server/session";
 import { queueHref, type QueueContext } from "./routes";
 
-export function DayNavigation({ context }: { context: QueueContext }) {
-  const canGoForward = context.day < yesterday();
+export function DayPicker({ days, context }: { days: QueueDay[]; context: QueueContext }) {
+  if (days.length === 0) return null;
 
   return (
-    <div className="join">
-      <Link
-        href={queueHref({ ...context, day: shiftDay(context.day, -1) })}
-        className="btn join-item btn-sm"
+    <details className="dropdown dropdown-end">
+      <summary
+        aria-label={`Change day, showing ${formatDay(context.day)}`}
+        className="btn gap-2 font-normal btn-sm"
       >
-        Previous day
-      </Link>
-      {canGoForward ? (
-        <Link
-          href={queueHref({ ...context, day: shiftDay(context.day, 1) })}
-          className="btn join-item btn-sm"
-        >
-          Next day
-        </Link>
-      ) : (
-        <span className="btn btn-disabled join-item btn-sm" aria-disabled>
-          Next day
-        </span>
-      )}
-    </div>
+        <CalendarIcon />
+        {formatShortDay(context.day)}
+        <ChevronDownIcon />
+      </summary>
+      <nav
+        aria-label="Recent days with replies"
+        className="dropdown-content z-10 mt-2 max-h-80 w-64 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-1 shadow-lg"
+      >
+        <ul className="flex flex-col">
+          {days.map((entry) => {
+            const active = entry.day === context.day;
+            return (
+              <li key={entry.day}>
+                <Link
+                  href={queueHref({ ...context, day: entry.day })}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center justify-between gap-3 rounded-field px-3 py-2 text-sm ${
+                    active ? "bg-base-200 font-semibold" : "hover:bg-base-200"
+                  }`}
+                >
+                  <span>{formatShortDay(entry.day)}</span>
+                  <span
+                    className={
+                      entry.pending > 0 ? "font-medium text-secondary" : "text-xs text-muted"
+                    }
+                  >
+                    {entry.pending > 0 ? `${entry.pending} to review` : "All reviewed"}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </details>
   );
 }
 

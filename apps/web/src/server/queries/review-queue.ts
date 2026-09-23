@@ -1,5 +1,5 @@
 import "server-only";
-import { dayRange, shiftDay } from "@/lib/dates";
+import { dayRange, shiftDay, toDay, yesterday } from "@/lib/dates";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { suggestSample } from "@/features/review/suggest-sample";
 import type { BrandSummary, Viewer } from "@/server/session";
@@ -30,8 +30,7 @@ export async function getReviewQueue(
   viewer: Viewer,
   { day, brand }: { day: string; brand?: string },
 ): Promise<ReviewQueue> {
-  const activeBrand = viewer.leads.find((b) => b.slug === brand) ?? null;
-  const brandIds = activeBrand ? [activeBrand.id] : viewer.leads.map((b) => b.id);
+  const { activeBrand, brandIds } = brandScope(viewer, brand);
   if (brandIds.length === 0) return { brands: viewer.leads, activeBrand, items: [] };
 
   const supabase = await createSupabaseServerClient();
@@ -109,4 +108,47 @@ export function nextToReview(queue: ReviewQueue, afterReplyId: string): QueueIte
     (item) => item.score === null && item.replyId !== afterReplyId,
   );
   return pending.find((item) => item.suggested) ?? pending[0] ?? null;
+}
+
+export type QueueDay = { day: string; total: number; pending: number };
+
+const RECENT_DAYS = 21;
+
+// Every recent day that had replies, with how many are still waiting, so a lead jumps straight to the work.
+export async function getRecentDays(
+  viewer: Viewer,
+  { brand }: { brand?: string },
+): Promise<QueueDay[]> {
+  const { brandIds } = brandScope(viewer, brand);
+  if (brandIds.length === 0) return [];
+
+  const supabase = await createSupabaseServerClient();
+  const lastDay = yesterday();
+
+  const { data, error } = await supabase
+    .from("replies")
+    .select("sent_at, reviews (reviewer_id)")
+    .in("brand_id", brandIds)
+    .gte("sent_at", dayRange(shiftDay(lastDay, -(RECENT_DAYS - 1))).start)
+    .lt("sent_at", dayRange(lastDay).end);
+  if (error) throw error;
+
+  const days = new Map<string, QueueDay>();
+  for (const reply of data) {
+    const day = toDay(new Date(reply.sent_at));
+    const current = days.get(day) ?? { day, total: 0, pending: 0 };
+    const reviewed = reply.reviews.some((review) => review.reviewer_id === viewer.id);
+    days.set(day, {
+      day,
+      total: current.total + 1,
+      pending: current.pending + (reviewed ? 0 : 1),
+    });
+  }
+  return [...days.values()].sort((a, b) => b.day.localeCompare(a.day));
+}
+
+function brandScope(viewer: Viewer, brand?: string) {
+  const activeBrand = viewer.leads.find((b) => b.slug === brand) ?? null;
+  const brandIds = activeBrand ? [activeBrand.id] : viewer.leads.map((b) => b.id);
+  return { activeBrand, brandIds };
 }
