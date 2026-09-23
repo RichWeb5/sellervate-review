@@ -14,6 +14,11 @@ export function shiftDay(day: string, days: number): string {
   return toDay(new Date(Date.parse(`${day}T00:00:00Z`) + days * DAY_MS));
 }
 
+export function weekStart(day: string): string {
+  const weekday = new Date(`${day}T00:00:00Z`).getUTCDay();
+  return shiftDay(day, -((weekday + 6) % 7));
+}
+
 export function isDay(value: unknown): value is string {
   return typeof value === "string" && DAY_PATTERN.test(value) && !Number.isNaN(Date.parse(value));
 }
