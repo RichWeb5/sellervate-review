@@ -31,3 +31,7 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# written by `next dev` when it detects a coding agent
+apps/web/AGENTS.md
+apps/web/CLAUDE.md
