@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { yesterday } from "@/lib/dates";
 import { queueHref } from "@/features/review/routes";
@@ -25,6 +26,21 @@ export function AppShell({ viewer, children }: { viewer: Viewer; children: React
                   key={brand.id}
                   href={queueHref({ day, brand: brand.slug })}
                   match={{ path: "/queue", brand: brand.slug }}
+                >
+                  <BrandMark brand={brand} />
+                </NavLink>
+              ))}
+            </section>
+          )}
+
+          {viewer.leads.length > 0 && (
+            <section className="flex flex-col gap-0.5">
+              <h2 className="px-2 pb-1 text-xs font-medium text-muted">Brand reports</h2>
+              {viewer.leads.map((brand) => (
+                <NavLink
+                  key={brand.id}
+                  href={`/brands/${brand.slug}` as Route}
+                  match={{ path: `/brands/${brand.slug}`, brand: null }}
                 >
                   <BrandMark brand={brand} />
                 </NavLink>
