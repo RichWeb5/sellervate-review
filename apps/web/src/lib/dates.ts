@@ -36,6 +36,15 @@ export function formatDay(day: string): string {
   }).format(new Date(`${day}T00:00:00Z`));
 }
 
+export function formatShortDay(day: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${day}T00:00:00Z`));
+}
+
 export function formatTime(timestamp: string): string {
   return new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",

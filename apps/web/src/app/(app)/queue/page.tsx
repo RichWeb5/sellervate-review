@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/empty-state";
-import { isDay, shiftDay, yesterday } from "@/lib/dates";
-import { BrandFilter, DayNavigation, dayHeading } from "@/features/review/queue-controls";
+import { formatDay, isDay, yesterday } from "@/lib/dates";
+import { BrandFilter, DayPicker, dayHeading } from "@/features/review/queue-controls";
 import { QueueList } from "@/features/review/queue-list";
 import { queueHref } from "@/features/review/routes";
 import { DAILY_SAMPLE_SIZE } from "@/features/review/suggest-sample";
-import { getReviewQueue } from "@/server/queries/review-queue";
+import { getRecentDays, getReviewQueue } from "@/server/queries/review-queue";
 import { requireViewer } from "@/server/session";
 
 export default async function QueuePage({ searchParams }: PageProps<"/queue">) {
@@ -16,9 +16,13 @@ export default async function QueuePage({ searchParams }: PageProps<"/queue">) {
   const brand = typeof params.brand === "string" ? params.brand : undefined;
   const context = { day, brand };
 
-  const queue = await getReviewQueue(viewer, context);
+  const [queue, recentDays] = await Promise.all([
+    getReviewQueue(viewer, context),
+    getRecentDays(viewer, context),
+  ]);
+  const latestDay = recentDays.find((entry) => entry.day !== day)?.day ?? null;
   const reviewedCount = queue.items.filter((item) => item.score !== null).length;
-  const suggestedCount = queue.items.filter((item) => item.suggested).length;
+  const dailyTarget = Math.min(DAILY_SAMPLE_SIZE, queue.items.length);
 
   return (
     <div className="flex max-w-5xl flex-col gap-6">
@@ -28,7 +32,7 @@ export default async function QueuePage({ searchParams }: PageProps<"/queue">) {
             <p className="text-sm text-muted">Replies sent</p>
             <h1 className="text-2xl">{dayHeading(day)}</h1>
           </div>
-          <DayNavigation context={context} />
+          <DayPicker days={recentDays} context={context} />
         </div>
         <BrandFilter brands={queue.brands} activeBrand={queue.activeBrand} day={day} />
       </header>
@@ -43,21 +47,29 @@ export default async function QueuePage({ searchParams }: PageProps<"/queue">) {
         <EmptyState
           title="No replies went out that day"
           action={
-            <Link href={queueHref({ ...context, day: shiftDay(day, -1) })} className="btn btn-sm">
-              Go to the previous day
-            </Link>
+            latestDay && (
+              <Link href={queueHref({ ...context, day: latestDay })} className="btn btn-sm">
+                Go to {formatDay(latestDay)}
+              </Link>
+            )
           }
         >
-          Weekends and quiet days look like this. Earlier days may still have replies waiting.
+          {latestDay
+            ? "Pick another day from the calendar button, or jump to the latest one with replies."
+            : "There are no recent replies for these brands."}
         </EmptyState>
       ) : (
         <>
-          <p className="text-sm text-muted">
-            {queue.items.length} replies went out. You reviewed {reviewedCount}
-            {suggestedCount > 0
-              ? `, and ${suggestedCount} more are suggested to reach ${DAILY_SAMPLE_SIZE}, spread across the specialists reviewed least lately.`
-              : "."}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span className="rounded-field bg-base-100 px-3 py-1 text-sm font-semibold tabular-nums shadow-sm">
+              {Math.min(reviewedCount, dailyTarget)} of {dailyTarget} reviewed
+            </span>
+            <p className="text-sm text-muted">
+              {reviewedCount >= dailyTarget
+                ? "You have reviewed enough for this day. Anything else is a bonus."
+                : `${queue.items.length} replies went out. Start with the suggested ones: they spread your reviews across the team.`}
+            </p>
+          </div>
           <QueueList items={queue.items} context={context} />
         </>
       )}
